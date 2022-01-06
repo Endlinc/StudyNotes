@@ -22,6 +22,50 @@
 首先我们需要创建3个StorageClass为any的pv，这为我们的将要部署的ZooKeeper提供持久的数据储存空间。
 
 ```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: zookeeper-pv-0
+  labels:
+    type: local
+spec:
+  storageClassName: any
+  capacity:
+    storage: 11Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: zookeeper-pv-1
+  labels:
+    type: local
+spec:
+  storageClassName: any
+  capacity:
+    storage: 11Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: zookeeper-pv-2
+  labels:
+    type: local
+spec:
+  storageClassName: any
+  capacity:
+    storage: 11Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
 ```
 
 通过执行kubectl apply命令，我们可以创建出上面声明的3个pv。
@@ -55,6 +99,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: zk-hs
+  namespace: mae
   labels:
     app: zk
 spec:
@@ -71,6 +116,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: zk-cs
+  namespace: mae
   labels:
     app: zk
 spec:
@@ -84,6 +130,7 @@ apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   name: zk-pdb
+  namespace: mae
 spec:
   selector:
     matchLabels:
@@ -94,6 +141,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: zk
+  namespace: mae
 spec:
   selector:
     matchLabels:
@@ -120,7 +168,7 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       containers:
       - name: kubernetes-zookeeper
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         image: "k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10"
         resources:
           requests:
@@ -174,13 +222,13 @@ spec:
         - name: datadir
           mountPath: /var/lib/zookeeper
       securityContext:
-        runAsUser: 1000
-        fsGroup: 1000
+        runAsUser: 0
   volumeClaimTemplates:
   - metadata:
       name: datadir
     spec:
       accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "any"
       resources:
         requests:
           storage: 10Gi
